@@ -49,6 +49,14 @@ The application takes 4 parameters:
 hadoop jar est.jar Estimator 2 2 /user/yourName/estimator/input /user/yourName/estimator/output
 ```
 
+## Viewing the output
+
+To view to output, run the following command to read back the results
+
+```
+hadoop fs -cat /user/yourName/estimator/output/part-r-00000
+```
+
 
 ## Built With
 
