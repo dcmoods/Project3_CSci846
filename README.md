@@ -57,6 +57,8 @@ To view to output, run the following command to read back the results
 hadoop fs -cat /user/yourName/estimator/output/part-r-00000
 ```
 
+The output should show any document names in pairs and the number of matching ngrams that were found.  
+
 
 ## Built With
 
