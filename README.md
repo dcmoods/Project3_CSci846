@@ -15,7 +15,7 @@ The system must have hadoop installed and setup.
 java version 1.8.0_151 or greated is required
 ```
 
-### Installing
+### Installing and Setup
 
 The project includes a bash script that will setup the environment variables, build the project, and create the jar.
 
@@ -26,7 +26,7 @@ The project includes a bash script that will setup the environment variables, bu
 Create an input directory on the HDFS.
 
 ```
-hadoop fs -mkdir /user/yourName/wordcount/input
+hadoop fs -mkdir /user/yourName/estimator/input
 ```
 
 Add txt files for input to the hadoop HDFS by issuing the following command for each file.
@@ -36,23 +36,25 @@ hadoop fs -copyFromLocal fileName /user/yourName/estimator/input/fileName
 ```
 
 
-## Running the projects from JAR files
+## Running the project
 
-If running the servers from the complied jar files, then open a command propmt, navigate to each folder and issue the following:
+The application takes 4 parameters:
+
+1. 𝑛: an integer value greater than 0, deterring the size of the n-grams
+2. 𝑘: an integer value greater than 0, deterring a threshold for which a couple of documents are regarded to contain simialrity. I.e. the algorithm will plot only couples with Sim(𝑑𝑜𝑐1 , 𝑑𝑜𝑐2) ≥ 𝑘
+3. docs: a directory containing documents to run the algorithm on
+4. output: the name of a directory to store the output
 
 ```
-java -jar [FileName].jar
+hadoop jar est.jar Estimator 2 2 /user/yourName/estimator/input /user/yourName/estimator/output
 ```
-This must be done for each project, so a total of four command propmts must be opened. 
 
-## The easy way
-
-Double click the Batch file included to Project_Jar directory and all the command prompts will launched automatically. When finished just close the windows to terminate. 
 
 ## Built With
 
 * [Java](https://www.oracle.com/technetwork/java/javase/downloads/index.html) - Language
 * [Eclipse](https://www.eclipse.org/) - IDE 
+* [Hadoop](https://hadoop.apache.org/) - Distributed Processing Framework
 
 ## Authors
 
