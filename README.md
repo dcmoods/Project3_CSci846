@@ -1,6 +1,6 @@
 # Project3_CSci846 Hadoop Document likeness estimator. 
 
-This is a java based application that uses hadoop meant to demoonstrate the core concepts of distributated environment. The estimator application will take documents stored in a directory and determine how closely related pairs of the documents are based on their specified ngram size. 
+This is a java based application that uses hadoop meant to demonstrate the core concepts of distributated environment. The estimator application will take documents stored in a directory and determine how closely related pairs of the documents are based on their specified ngram size. 
 
 ## Getting Started
 
