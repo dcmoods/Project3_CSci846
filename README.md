@@ -23,21 +23,18 @@ The project includes a bash script that will setup the environment variables, bu
  ./est.sh
 ```
 
-Repeat for the TCPPhone and TCPName Servers, as well as the TCPClient. The Client applicaiton must be last. 
+Create an input directory on the HDFS.
 
 ```
-Right Click TCPClient project -> "Run as" -> Java Application. 
+hadoop fs -mkdir /user/yourName/wordcount/input
 ```
 
-In the command prompt for the client enter:
+Add txt files for input to the hadoop HDFS by issuing the following command for each file.
+
 ```
-get phone alan
+hadoop fs -copyFromLocal fileName /user/yourName/estimator/input/fileName
 ```
 
-You should see a response of:
-```
-701-111-2222
-```
 
 ## Running the projects from JAR files
 
