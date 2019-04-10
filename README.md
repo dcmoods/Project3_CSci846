@@ -38,15 +38,16 @@ hadoop fs -copyFromLocal fileName /user/yourName/estimator/input/fileName
 
 ## Running the project
 
-The application takes 4 parameters:
+The application takes 4 parameters, however, only input and output are required. If not n or k values are set, each will default to the value 2:
 
-1. 𝑛: an integer value greater than 0, deterring the size of the n-grams
-2. 𝑘: an integer value greater than 0, deterring a threshold for which a couple of documents are regarded to contain simialrity. I.e. the algorithm will plot only couples with Sim(𝑑𝑜𝑐1 , 𝑑𝑜𝑐2) ≥ 𝑘
-3. docs: a directory containing documents to run the algorithm on
+1. 𝑛: an integer value greater than 0, determiniing the size of the n-grams
+2. 𝑘: an integer value greater than 0, determiniing a threshold for which a couple of documents are regarded to contain simialrity. I.e. the algorithm will plot only couples with Sim(𝑑𝑜𝑐1 , 𝑑𝑜𝑐2) ≥ 𝑘
+3. input: a directory containing documents to run the algorithm on
 4. output: the name of a directory to store the output
 
+
 ```
-hadoop jar est.jar Estimator 2 2 /user/yourName/estimator/input /user/yourName/estimator/output
+hadoop jar est.jar Estimator -input /user/yourName/estimator/input -output /user/yourName/estimator/output
 ```
 
 ## Viewing the output
@@ -59,6 +60,11 @@ hadoop fs -cat /user/yourName/estimator/output/part-r-00000
 
 The output should show any document names in pairs and the number of matching ngrams that were found.  
 
+```
+file01, file02  5
+file01, file03  2
+file02, file03  2
+```
 
 ## Built With
 
