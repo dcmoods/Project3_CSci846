@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.NavigableMap;
@@ -9,7 +10,16 @@ import java.util.stream.StreamSupport;
 
 import javax.swing.text.html.HTMLDocument.Iterator;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -21,13 +31,17 @@ import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
-
-
-
+import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
+import org.apache.log4j.Logger;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
-public class Estimator {
-
+public class Estimator extends Configured implements Tool {
+	
+	private static final Logger LOG = Logger.getLogger(Estimator.class);
+	
+	private Estimator() {}
+	
 	public static class Map extends Mapper<LongWritable,Text,Text,Text> {
 	    
 		private int nSize;
@@ -116,7 +130,7 @@ public class Estimator {
 		 private int count;
 		 private IntWritable result = new IntWritable();
 		 public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
-			 count = context.getConfiguration().getInt("k", 3);
+			 count = context.getConfiguration().getInt("k", 2);
 			 int sum = 0;
 			 for (IntWritable val : values) {
 				 sum += val.get();
@@ -128,10 +142,70 @@ public class Estimator {
 		 }
 	 }
 	
-	public static void main(String[] args) throws Exception {
-			
-			Configuration conf= new Configuration();
-			conf.set("n", args[0]);
+	private static final String INPUT = "input";
+	private static final String OUTPUT = "output";
+	private static final String NGRAM = "n";
+	private static final String COUNT = "k";
+	
+	 @SuppressWarnings({ "static-access" })
+	    public int run(String[] args) throws Exception {
+	        Options options = new Options();
+
+	        options.addOption(OptionBuilder.withArgName("path").hasArg()
+	                .withDescription("input path").create(INPUT));
+	        options.addOption(OptionBuilder.withArgName("path").hasArg()
+	                .withDescription("output path").create(OUTPUT));
+	        options.addOption(OptionBuilder.withArgName("n").hasArg()
+	                .withDescription("ngram size").create(NGRAM));
+	        options.addOption(OptionBuilder.withArgName("k").hasArg()
+	                .withDescription("matches required").create(COUNT));
+	        
+
+	        CommandLine cmdline;
+	        CommandLineParser parser = new GnuParser();
+
+	        try {
+	            cmdline = parser.parse(options, args);
+	        } catch (ParseException exp) {
+	            System.err.println("Error parsing command line: "
+	                    + exp.getMessage());
+	            return -1;
+	        }
+
+	        if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(OUTPUT)) {
+	            System.out.println("args: " + Arrays.toString(args));
+	            HelpFormatter formatter = new HelpFormatter();
+	            formatter.setWidth(120);
+	            formatter.printHelp(this.getClass().getName(), options);
+	            ToolRunner.printGenericCommandUsage(System.out);
+	            return -1;
+	        }
+
+	        String inputPath = cmdline.getOptionValue(INPUT);
+	        String outputPath = cmdline.getOptionValue(OUTPUT);
+	        int nGrams = cmdline.hasOption(NGRAM) ? Integer
+	                .parseInt(cmdline.getOptionValue(NGRAM)) : 2;
+            int matches = cmdline.hasOption(COUNT) ? Integer
+	                .parseInt(cmdline.getOptionValue(COUNT)) : 2;        
+	                
+	        if (nGrams <= 0 || matches <= 0) {
+	            System.out.println("args: " + Arrays.toString(args));
+	            HelpFormatter formatter = new HelpFormatter();
+	            formatter.setWidth(120);
+	            formatter.printHelp(this.getClass().getName(), options);
+	            ToolRunner.printGenericCommandUsage(System.out);
+	            return -1;
+	        }
+	                
+	        LOG.info("Tool name: " + Estimator.class.getSimpleName());
+	        LOG.info(" - input path: " + inputPath);
+	        LOG.info(" - output path: " + outputPath);
+	        LOG.info(" - ngram size > 0 [default=2] : " + nGrams);
+	        LOG.info(" - minimum matches > 0 [default=2]: " + matches);
+
+
+	        Configuration conf= new Configuration();
+			conf.setInt("n", nGrams);
 			Job job = new Job(conf,"FindDataGrams");
 			
 			job.setMapOutputKeyClass(Text.class);
@@ -147,14 +221,14 @@ public class Estimator {
 			job.setInputFormatClass(TextInputFormat.class);
 			job.setOutputFormatClass(TextOutputFormat.class);
 			Path tempPath = new Path("/user/mimoody/estimator/temp");
-			FileInputFormat.addInputPath(job, new Path(args[2]));
+			FileInputFormat.addInputPath(job, new Path(inputPath));
 			FileOutputFormat.setOutputPath(job, tempPath);
 			tempPath.getFileSystem(conf).delete(tempPath);
 			job.waitForCompletion(true);
 			
 			//Setup second mapreduce
 			Configuration conf2= new Configuration();
-			conf2.set("k", args[1]);
+			conf2.setInt("k", matches);
 			Job job2 = new Job(conf2,"SumDataGrams");
 						
 			job2.setJarByClass(Estimator.class);
@@ -165,14 +239,25 @@ public class Estimator {
 			job2.setOutputKeyClass(Text.class);
 			job2.setOutputValueClass(IntWritable.class);
 			
-			Path outputPath = new Path(args[3]);
+			Path outputPath1 = new Path(outputPath);
 			FileInputFormat.addInputPath(job2, new Path("/user/mimoody/estimator/temp"));
-			FileOutputFormat.setOutputPath(job2, outputPath);
+			FileOutputFormat.setOutputPath(job2, outputPath1);
 			
-			outputPath.getFileSystem(conf2).delete(outputPath);
+			outputPath1.getFileSystem(conf2).delete(outputPath1);
 						
-			//System.exit(job.waitForCompletion(true) ? 0 : 1);
-			System.exit(job2.waitForCompletion(true) ? 0 : 1);
+			
+	        long startTime = System.currentTimeMillis();
+	        
+	        job2.waitForCompletion(true);
+	        System.out.println("Job Finished in "
+	                + (System.currentTimeMillis() - startTime) / 1000.0
+	                + " seconds");
+
+	        return 0;
+	    }
+	 
+	public static void main(String[] args) throws Exception {
+		 ToolRunner.run(new Estimator(), args);
 		}
 }
 
