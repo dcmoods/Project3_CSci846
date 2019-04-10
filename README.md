@@ -17,10 +17,12 @@ java version 1.8.0_151 or greated is required
 
 ### Installing and Setup
 
-The project includes a bash script that will setup the environment variables, build the project, and create the jar.
+Pull down a copy of the project. The project includes a bash script that will setup the environment variables, build the project, and create the jar. Just issue the following commands.
 
 ```
- ./est.sh
+cd Project3_843/src/
+chmod 755 est.sh 
+./est.sh
 ```
 
 Create an input directory on the HDFS.
